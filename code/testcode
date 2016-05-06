@@ -1,0 +1,89 @@
+#include <cstdio>
+#include <cstring>
+#include <algorithm>
+#include <queue>
+using namespace std;
+#define clr( a, b ) memset( a, b, sizeof(a) )
+const int SIGMA_SIZE = 26;
+const int NODE_SIZE = 500000 + 10;
+
+struct ac_automaton{
+    int ch[ NODE_SIZE ][ SIGMA_SIZE ];
+    int f[ NODE_SIZE ], val[ NODE_SIZE ], last[ NODE_SIZE ];
+    int sz;
+    void init(){
+        sz = 1;
+        clr( ch[0], 0 ), clr( val, 0 );
+    }
+    void insert( char *s ){
+        int u = 0, i = 0;
+        for( ; s[i]; ++i ){
+            int c = s[i] - 'a';
+            if( !ch[u][c] ){
+                clr( ch[sz], 0 );
+                val[sz] = 0;
+                ch[u][c] = sz++;
+            }
+            u = ch[u][c];
+        }
+        val[u]++;
+    }
+    void getfail(){
+        queue<int> q;
+        f[0] = 0;
+        for( int c = 0; c < SIGMA_SIZE; ++c ){
+            int u = ch[0][c];
+            if( u ) f[u] = 0, q.push(u), last[u] = 0;
+        }
+        while( !q.empty() ){
+            int r = q.front(); q.pop();
+            for( int c = 0; c < SIGMA_SIZE; ++c ){
+                int u = ch[r][c];
+                if( !u ){
+                    ch[r][c] = ch[ f[r] ][c];
+                    continue;    
+                } 
+                q.push( u );
+                int v = f[r];
+                while( v && !ch[v][c] ) v = f[v];
+                f[u] = ch[v][c];
+                last[u] = val[ f[u] ] ? f[u] : last[ f[u] ];
+            }
+        }
+    }
+    int work( char* s ){
+        int res = 0;
+        int u = 0, i = 0, e;
+        for( ; s[i]; ++i ){
+            int c = s[i] - 'a';
+            u = ch[u][c];
+            e = u;
+            while( val[e] ){
+                res += val[e];
+                val[e] = 0;
+                e = last[e];
+            }
+        }
+        return res;
+    } 
+}ac;
+
+
+char text[1000010], p[55];
+int n, t, cas;
+
+int main(){
+    scanf( "%d", &cas );
+    while( cas-- ){
+        ac.init();
+        scanf( "%d", &n );
+        while( n-- ){
+            scanf( "%s", p );
+            ac.insert( p );
+        }            
+        ac.getfail();
+        scanf( "%s", text );
+        printf( "%d\n", ac.work( text ) );
+    }
+    return 0;
+}
